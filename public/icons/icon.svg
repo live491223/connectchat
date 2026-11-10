@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#8B5CF6" />
+    </linearGradient>
+    <linearGradient id="bubbleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E0E7FF" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#1E1B4B" flood-opacity="0.35" />
+    </filter>
+  </defs>
+  
+  <!-- App Background -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+  
+  <!-- Outer glow ring -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#FFFFFF" stroke-opacity="0.12" stroke-width="8" />
+
+  <!-- Chat Bubble 1 (Primary) -->
+  <g filter="url(#shadow)">
+    <path d="M140 180 C140 135 175 100 220 100 L330 100 C375 100 410 135 410 180 C410 225 375 260 330 260 L240 260 L180 305 L190 260 L180 260 C158 260 140 242 140 220 Z" fill="url(#bubbleGrad)" />
+  </g>
+
+  <!-- Chat Bubble 2 (Overlay Reply) -->
+  <g filter="url(#shadow)">
+    <path d="M110 270 C110 235 138 210 172 210 L280 210 C314 210 342 235 342 270 C342 305 314 330 280 330 L220 330 L160 375 L170 330 L145 330 C125 330 110 315 110 295 Z" fill="#0F172A" fill-opacity="0.9" />
+  </g>
+
+  <!-- Connect pulse dots inside bubble 1 -->
+  <circle cx="240" cy="180" r="14" fill="#6366F1" />
+  <circle cx="285" cy="180" r="14" fill="#3B82F6" />
+  <circle cx="330" cy="180" r="14" fill="#06B6D4" />
+
+  <!-- Connect pulse dots inside bubble 2 -->
+  <circle cx="190" cy="270" r="12" fill="#38BDF8" />
+  <circle cx="230" cy="270" r="12" fill="#818CF8" />
+  <circle cx="270" cy="270" r="12" fill="#C084FC" />
+
+  <!-- Lightning / Spark of Connection -->
+  <path d="M260 215 L240 245 L255 245 L245 275 L275 235 L260 235 Z" fill="#FBBF24" />
+</svg>

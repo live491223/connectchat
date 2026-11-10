@@ -1,0 +1,111 @@
+// ConnectChat Universal Messenger - Prisma Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(uuid())
+  name             String
+  username         String   @unique
+  email            String   @unique
+  password         String
+  avatar           String?
+  statusMessage    String?  @default("Hey there! I am using ConnectChat.")
+  isOnline         Boolean  @default(false)
+  lastSeen         DateTime @default(now())
+  showOnlineStatus Boolean  @default(true)
+  readReceipts     Boolean  @default(true)
+  theme            String   @default("system")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  participants     ConversationParticipant[]
+  sentMessages     Message[]                 @relation("UserMessages")
+  reactions        Reaction[]
+  receipts         MessageReceipt[]
+}
+
+model Conversation {
+  id               String   @id @default(uuid())
+  name             String?
+  isGroup          Boolean  @default(false)
+  groupAvatar      String?
+  groupDescription String?
+  adminId          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  participants     ConversationParticipant[]
+  messages         Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(uuid())
+  conversationId String
+  userId         String
+  role           String       @default("MEMBER") // ADMIN, MEMBER
+  unreadCount    Int          @default(0)
+  lastReadAt     DateTime?
+  joinedAt       DateTime     @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String           @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String
+  type           String           @default("TEXT") // TEXT, IMAGE, VIDEO, AUDIO, DOCUMENT, SYSTEM
+  fileUrl        String?
+  fileName       String?
+  fileSize       Int?
+  duration       Float?
+  isEdited       Boolean          @default(false)
+  isDeleted      Boolean          @default(false)
+  replyToId      String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User             @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo        Message?         @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        Message[]        @relation("MessageReplies")
+  reactions      Reaction[]
+  receipts       MessageReceipt[]
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+}
+
+model MessageReceipt {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  status    String   @default("DELIVERED") // DELIVERED, READ
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+}
