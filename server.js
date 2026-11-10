@@ -4,9 +4,16 @@ const next = require('next');
 const { Server } = require('socket.io');
 const { PrismaClient } = require('@prisma/client');
 
-const dev = process.env.NODE_ENV !== 'production';
+const fs = require('fs');
+const path = require('path');
+
+// Auto-detect production build
+const hasBuild = fs.existsSync(path.join(__dirname, '.next', 'BUILD_ID'));
+const dev = process.env.FORCE_DEV === 'true' ? true : !hasBuild;
 const hostname = '0.0.0.0';
 const port = parseInt(process.env.PORT || '3000', 10);
+
+console.log(`> ConnectChat starting in ${dev ? 'DEVELOPMENT' : 'PRODUCTION'} mode (Port: ${port})`);
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();

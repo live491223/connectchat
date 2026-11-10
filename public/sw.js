@@ -1,4 +1,4 @@
-const CACHE_NAME = 'connectchat-cache-v1.0.0';
+const CACHE_NAME = 'connectchat-cache-v1.0.2';
 const OFFLINE_URL = '/offline.html';
 
 const STATIC_ASSETS = [
@@ -40,8 +40,8 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests and Socket.io polling/websockets
-  if (request.method !== 'GET' || url.pathname.startsWith('/socket.io/')) {
+  // Skip non-GET requests, Socket.io polling, and dynamic Next.js chunks
+  if (request.method !== 'GET' || url.pathname.startsWith('/socket.io/') || url.pathname.startsWith('/_next/')) {
     return;
   }
 
