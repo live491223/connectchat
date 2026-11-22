@@ -147,8 +147,25 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       socket.emit('join_conversation', { conversationId: activeConversationId });
     }
 
+    // Fallback polling for serverless environments (e.g. Vercel) when WebSockets are unavailable
+    const pollInterval = setInterval(() => {
+      if (!socket || !socket.connected) {
+        if (activeConversationId) {
+          fetch(`/api/conversations/${activeConversationId}`)
+            .then((r) => r.json())
+            .then((data) => {
+              if (isSubscribed && data.messages) {
+                setMessages(data.messages);
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    }, 3000);
+
     return () => {
       isSubscribed = false;
+      clearInterval(pollInterval);
       if (socket && socket.connected) {
         socket.emit('leave_conversation', { conversationId: activeConversationId });
       }
