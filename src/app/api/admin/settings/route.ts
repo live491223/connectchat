@@ -22,7 +22,9 @@ export async function GET() {
         pwa_enabled: settingsMap['pwa_enabled'] !== 'false',
         announcement_enabled: settingsMap['announcement_enabled'] === 'true',
         announcement_text: settingsMap['announcement_text'] || '',
-        require_user_approval: settingsMap['require_user_approval'] === 'true',
+        require_user_approval: settingsMap['require_user_approval'] !== 'false', // Default TRUE for strict approval
+        google_client_id: settingsMap['google_client_id'] || '',
+        google_client_secret: settingsMap['google_client_secret'] || '',
       },
     });
   } catch (error: any) {
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { pwa_enabled, announcement_enabled, announcement_text, require_user_approval } = body;
+    const { pwa_enabled, announcement_enabled, announcement_text, require_user_approval, google_client_id, google_client_secret } = body;
 
     const updates: { key: string; value: string }[] = [];
 
@@ -54,6 +56,12 @@ export async function POST(req: Request) {
     }
     if (typeof require_user_approval === 'boolean') {
       updates.push({ key: 'require_user_approval', value: String(require_user_approval) });
+    }
+    if (typeof google_client_id === 'string') {
+      updates.push({ key: 'google_client_id', value: google_client_id.trim() });
+    }
+    if (typeof google_client_secret === 'string') {
+      updates.push({ key: 'google_client_secret', value: google_client_secret.trim() });
     }
 
     for (const item of updates) {

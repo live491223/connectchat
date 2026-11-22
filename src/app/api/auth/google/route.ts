@@ -106,21 +106,7 @@ export async function POST(req: Request) {
           lastSeen: new Date(),
         },
       });
-
-      if (requireApproval) {
-        return NextResponse.json({
-          error: 'Your account was created but is pending administrator approval before you can sign in.',
-          isPendingApproval: true,
-        }, { status: 403 });
-      }
     } else {
-      if (user.isApproved === false && user.role !== 'ADMIN') {
-        return NextResponse.json({
-          error: 'Your account is pending administrator approval.',
-          isPendingApproval: true,
-        }, { status: 403 });
-      }
-
       // Update online status and avatar if not set
       user = await prisma.user.update({
         where: { id: user.id },

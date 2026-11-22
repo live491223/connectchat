@@ -146,8 +146,8 @@ export function MessageItem({ message, isGroup = false, isHighlighted = false }:
             className={cn(
               'relative rounded-2xl px-4 py-2.5 text-sm shadow-sm transition-all',
               isMe
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-xs'
-                : 'bg-card text-card-foreground border border-border/60 rounded-bl-xs',
+                ? 'bg-[#2b5278] text-white rounded-br-xs'
+                : 'bg-[#182533] text-[#f5f5f5] border border-[#242f3d] rounded-bl-xs',
               message.isDeleted && 'opacity-70 italic'
             )}
           >

@@ -38,13 +38,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid username/email or password' }, { status: 401 });
     }
 
-    if (user.isApproved === false && user.role !== 'ADMIN') {
-      return NextResponse.json({
-        error: 'Your account is pending admin approval. You will be able to log in once an administrator approves your account.',
-        isPendingApproval: true,
-      }, { status: 403 });
-    }
-
     // Update presence
     await prisma.user.update({
       where: { id: user.id },

@@ -60,14 +60,6 @@ export async function POST(req: Request) {
       },
     });
 
-    if (requireApproval) {
-      return NextResponse.json({
-        success: true,
-        pendingApproval: true,
-        message: 'Account created successfully! It is pending administrator approval before you can sign in.',
-      });
-    }
-
     const token = generateToken({
       userId: user.id,
       email: user.email,

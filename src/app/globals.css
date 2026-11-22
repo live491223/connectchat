@@ -3,48 +3,48 @@
 @tailwind utilities;
 
 :root {
-  --background: 210 40% 98%;
+  --background: 210 20% 96%;
   --foreground: 222 47% 11%;
   --card: 0 0% 100%;
   --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
+  --primary: 206 70% 47%; /* Telegram Blue #2481cc */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 20% 92%;
   --secondary-foreground: 222 47% 11.2%;
-  --muted: 210 40% 96.1%;
+  --muted: 210 20% 94%;
   --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222 47% 11.2%;
+  --accent: 206 70% 47%;
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
-  --radius: 0.75rem;
+  --border: 214.3 20% 88%;
+  --input: 214.3 20% 88%;
+  --ring: 206 70% 47%;
+  --radius: 0.85rem;
 }
 
 .dark {
-  --background: 222 47% 11%;
+  --background: 215 39% 9%; /* Telegram Desktop #0e1621 */
   --foreground: 210 40% 98%;
-  --card: 217 33% 15%;
+  --card: 211 30% 13%; /* Telegram Sidebar #17212b */
   --card-foreground: 210 40% 98%;
-  --popover: 217 33% 15%;
+  --popover: 211 30% 13%;
   --popover-foreground: 210 40% 98%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222 47% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
+  --primary: 206 70% 47%; /* Telegram Blue #2481cc */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 212 25% 17%; /* Telegram Hover #202b36 */
   --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
+  --muted: 212 25% 17%;
+  --muted-foreground: 213 16% 52%; /* Telegram Subtext #708499 */
+  --accent: 206 70% 47%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 70% 50%;
   --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 20%;
-  --input: 217.2 32.6% 20%;
-  --ring: 224.3 76.3% 48%;
+  --border: 215 26% 19%; /* Telegram Border #242f3d */
+  --input: 215 26% 19%;
+  --ring: 206 70% 47%;
 }
 
 * {

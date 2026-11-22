@@ -3,6 +3,7 @@
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { ResponsiveShell } from '@/components/layout/ResponsiveShell';
+import { PendingApprovalView } from '@/components/auth/PendingApprovalView';
 import LoginPage from './login/page';
 import { Loader2 } from 'lucide-react';
 
@@ -22,9 +23,14 @@ export default function HomePage() {
     );
   }
 
-  // If not authenticated, render LoginPage directly (zero redirect delay or blank screen)
+  // If not authenticated, render LoginPage directly
   if (!user) {
     return <LoginPage />;
+  }
+
+  // If user is registered but awaiting admin approval, render PendingApprovalView
+  if (user.role !== 'ADMIN' && user.isApproved === false) {
+    return <PendingApprovalView />;
   }
 
   return <ResponsiveShell />;

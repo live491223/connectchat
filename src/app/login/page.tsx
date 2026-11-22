@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,11 +31,33 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [googleClientId, setGoogleClientId] = useState<string>('');
 
-  // Google Sign-In Modal (for quick Google sign-in or configuring OAuth)
+  // Google Sign-In Modal
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const [googleEmail, setGoogleEmail] = useState('');
   const [googleName, setGoogleName] = useState('');
+
+  // Load configured Google Client ID from public settings
+  useEffect(() => {
+    fetch('/api/settings/public')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.google_client_id) {
+          setGoogleClientId(data.google_client_id);
+          // Load Google Identity Services script
+          if (!document.getElementById('google-jssdk')) {
+            const script = document.createElement('script');
+            script.id = 'google-jssdk';
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -73,7 +96,7 @@ export default function LoginPage() {
   // Handle Google Sign-In click
   const handleGoogleClick = () => {
     setError(null);
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const clientId = googleClientId || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
     // If official Google Client ID is configured and GIS is loaded
     if (clientId && typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
@@ -100,7 +123,7 @@ export default function LoginPage() {
       }
     }
 
-    // Default: Open sleek Google Sign-In modal
+    // Default: Open sleek Telegram-styled Google Sign-In prompt
     setShowGoogleModal(true);
   };
 
@@ -136,31 +159,31 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen bg-[#0e1621]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#2481cc]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-background relative overflow-y-auto">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-[#0e1621] text-[#f5f5f5] relative overflow-y-auto">
       {/* Background ambient glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#2481cc]/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md bg-card/90 backdrop-blur-2xl border border-border/80 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 my-8">
-        {/* App Logo & Header */}
+      <div className="w-full max-w-md bg-[#17212b] border border-[#242f3d] rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 my-8">
+        {/* Telegram-style Logo & Header */}
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-primary/30 mb-3">
-            <MessageSquare className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-2xl bg-[#2481cc] flex items-center justify-center text-white shadow-lg shadow-[#2481cc]/30 mb-3">
+            <MessageSquare className="w-9 h-9" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">ConnectChat</h1>
-          <p className="text-xs text-muted-foreground mt-1">
-            Universal Real-Time Messenger for Mobile, Tablet & Desktop
+          <p className="text-xs text-[#708499] mt-1">
+            Fast, secure, universal messaging & calls (Telegram Edition)
           </p>
         </div>
 
         {/* Tab Switcher: Sign In vs Create Account */}
-        <div className="flex border border-border/80 rounded-2xl p-1 bg-muted/40 mb-6 text-xs font-semibold">
+        <div className="flex border border-[#242f3d] rounded-2xl p-1 bg-[#0e1621] mb-6 text-xs font-semibold">
           <button
             type="button"
             onClick={() => {
@@ -170,8 +193,8 @@ export default function LoginPage() {
             className={cn(
               'flex-1 py-2 rounded-xl transition-all',
               mode === 'login'
-                ? 'bg-card text-foreground shadow-xs font-bold'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-[#2481cc] text-white shadow-xs font-bold'
+                : 'text-[#708499] hover:text-white'
             )}
           >
             Sign In
@@ -185,8 +208,8 @@ export default function LoginPage() {
             className={cn(
               'flex-1 py-2 rounded-xl transition-all',
               mode === 'register'
-                ? 'bg-card text-foreground shadow-xs font-bold'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-[#2481cc] text-white shadow-xs font-bold'
+                : 'text-[#708499] hover:text-white'
             )}
           >
             Create Account
@@ -195,7 +218,7 @@ export default function LoginPage() {
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs font-medium text-center animate-fade-in">
+          <div className="mb-4 p-3 rounded-xl bg-destructive/15 border border-destructive/30 text-rose-400 text-xs font-medium text-center animate-fade-in">
             {error}
           </div>
         )}
@@ -205,7 +228,7 @@ export default function LoginPage() {
           type="button"
           onClick={handleGoogleClick}
           disabled={submitting}
-          className="w-full py-2.5 px-4 rounded-xl border border-border bg-card hover:bg-muted/60 text-foreground font-medium text-sm transition-all flex items-center justify-center gap-3 shadow-xs mb-4 group"
+          className="w-full py-2.5 px-4 rounded-xl border border-[#242f3d] bg-[#202b36] hover:bg-[#2b3947] text-white font-medium text-xs transition-all flex items-center justify-center gap-3 shadow-xs mb-4 group"
         >
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
             <path
@@ -230,53 +253,53 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div className="relative flex items-center justify-center my-4">
-          <div className="border-t border-border w-full" />
-          <span className="bg-card px-3 text-[11px] uppercase tracking-wider text-muted-foreground shrink-0">
-            or with email
+          <div className="border-t border-[#242f3d] w-full" />
+          <span className="bg-[#17212b] px-3 text-[11px] uppercase tracking-wider text-[#708499] shrink-0">
+            or with credentials
           </span>
-          <div className="border-t border-border w-full" />
+          <div className="border-t border-[#242f3d] w-full" />
         </div>
 
         {/* Mode 1: Sign In */}
         {mode === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">
+              <label className="block text-xs font-semibold text-[#708499] uppercase mb-1">
                 Email or Username
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+                <Mail className="w-4 h-4 absolute left-3 top-3 text-[#708499]" />
                 <input
                   type="text"
                   required
-                  placeholder="admin or sarah@connectchat.io"
+                  placeholder="admin or user@gmail.com"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-muted/60 border border-border text-sm focus:outline-none focus:border-primary transition-colors"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-sm text-white focus:outline-none focus:border-[#2481cc] transition-colors"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-semibold text-muted-foreground uppercase">
+                <label className="block text-xs font-semibold text-[#708499] uppercase">
                   Password
                 </label>
               </div>
               <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+                <Lock className="w-4 h-4 absolute left-3 top-3 text-[#708499]" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2 rounded-xl bg-muted/60 border border-border text-sm focus:outline-none focus:border-primary transition-colors"
+                  className="w-full pl-9 pr-10 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-sm text-white focus:outline-none focus:border-[#2481cc] transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3 top-2.5 text-[#708499] hover:text-white transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -284,15 +307,15 @@ export default function LoginPage() {
             </div>
 
             {/* Admin quick access helper */}
-            <div className="p-2.5 rounded-xl bg-muted/30 border border-border/60 flex items-center justify-between text-[11px]">
-              <span className="text-muted-foreground flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
-                Admin access:
+            <div className="p-2.5 rounded-xl bg-[#202b36] border border-[#242f3d] flex items-center justify-between text-[11px]">
+              <span className="text-[#708499] flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                Administrator:
               </span>
               <button
                 type="button"
                 onClick={fillAdminCredentials}
-                className="text-primary hover:underline font-semibold"
+                className="text-[#2481cc] hover:underline font-bold"
               >
                 Auto-fill (admin)
               </button>
@@ -301,7 +324,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2 shadow-sm"
+              className="w-full py-2.5 rounded-xl bg-[#2481cc] hover:bg-[#2074b8] text-white font-bold text-sm disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-sm"
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign In'}
             </button>
@@ -312,62 +335,62 @@ export default function LoginPage() {
         {mode === 'register' && (
           <form onSubmit={handleRegister} className="space-y-3.5">
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">
+              <label className="block text-xs font-semibold text-[#708499] uppercase mb-1">
                 Full Name
               </label>
               <div className="relative">
-                <User className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+                <User className="w-4 h-4 absolute left-3 top-3 text-[#708499]" />
                 <input
                   type="text"
                   required
                   placeholder="e.g. John Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-muted/60 border border-border text-sm focus:outline-none focus:border-primary transition-colors"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-sm text-white focus:outline-none focus:border-[#2481cc] transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">
+              <label className="block text-xs font-semibold text-[#708499] uppercase mb-1">
                 Username
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 text-xs text-muted-foreground">@</span>
+                <span className="absolute left-3 top-2.5 text-xs text-[#708499]">@</span>
                 <input
                   type="text"
                   required
                   placeholder="johndoe"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 rounded-xl bg-muted/60 border border-border text-sm focus:outline-none focus:border-primary transition-colors"
+                  className="w-full pl-8 pr-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-sm text-white focus:outline-none focus:border-[#2481cc] transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">
+              <label className="block text-xs font-semibold text-[#708499] uppercase mb-1">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+                <Mail className="w-4 h-4 absolute left-3 top-3 text-[#708499]" />
                 <input
                   type="email"
                   required
                   placeholder="john@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-muted/60 border border-border text-sm focus:outline-none focus:border-primary transition-colors"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-sm text-white focus:outline-none focus:border-[#2481cc] transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">
+              <label className="block text-xs font-semibold text-[#708499] uppercase mb-1">
                 Password
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+                <Lock className="w-4 h-4 absolute left-3 top-3 text-[#708499]" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
@@ -375,50 +398,55 @@ export default function LoginPage() {
                   placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2 rounded-xl bg-muted/60 border border-border text-sm focus:outline-none focus:border-primary transition-colors"
+                  className="w-full pl-9 pr-10 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-sm text-white focus:outline-none focus:border-[#2481cc] transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3 top-2.5 text-[#708499] hover:text-white transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
+            <div className="p-2.5 rounded-xl bg-[#202b36] border border-[#242f3d] text-[11px] text-[#708499] flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#2481cc] shrink-0" />
+              <span>Naya account create hone ke baad Admin approval ke liye submit hoga.</span>
+            </div>
+
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2 shadow-sm"
+              className="w-full py-2.5 rounded-xl bg-[#2481cc] hover:bg-[#2074b8] text-white font-bold text-sm disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-sm"
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create Account'}
             </button>
           </form>
         )}
 
-        <div className="mt-6 pt-4 border-t border-border/60 text-center">
-          <p className="text-[11px] text-muted-foreground">
-            🔒 End-to-end encrypted sessions &middot; PWA offline capable &middot; Multi-device sync
+        <div className="mt-6 pt-4 border-t border-[#242f3d] text-center">
+          <p className="text-[11px] text-[#708499]">
+            🔒 Telegram-grade encryption &middot; PWA offline capable &middot; Multi-device sync
           </p>
         </div>
       </div>
 
       {/* Google Sign-In Dialog / Modal */}
       {showGoogleModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="w-full max-w-sm bg-card border border-border rounded-3xl p-6 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-sm bg-[#17212b] border border-[#242f3d] rounded-3xl p-6 shadow-2xl relative text-white">
             <button
               type="button"
               onClick={() => setShowGoogleModal(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+              className="absolute top-4 right-4 text-[#708499] hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
 
             <div className="flex flex-col items-center text-center mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mb-2">
-                <svg className="w-6 h-6" viewBox="0 0 24 24">
+              <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center mb-2 p-2">
+                <svg className="w-7 h-7" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -438,56 +466,45 @@ export default function LoginPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold">Sign in with Google</h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Enter your Google Account email to continue:
+              <p className="text-xs text-[#708499] mt-1">
+                Enter your Gmail address to sign in or register:
               </p>
             </div>
 
             <form onSubmit={handleGoogleSubmit} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-semibold text-muted-foreground uppercase mb-1">
+                <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">
                   Google Email
                 </label>
                 <input
                   type="email"
                   required
                   autoFocus
-                  placeholder="user@gmail.com"
+                  placeholder="yourname@gmail.com"
                   value={googleEmail}
                   onChange={(e) => setGoogleEmail(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border text-sm focus:outline-none focus:border-primary"
+                  className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-sm text-white focus:outline-none focus:border-[#2481cc]"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-muted-foreground uppercase mb-1">
-                  Your Name (Optional)
+                <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">
+                  Your Full Name
                 </label>
                 <input
                   type="text"
-                  placeholder="Your Name"
+                  placeholder="e.g. John Doe"
                   value={googleName}
                   onChange={(e) => setGoogleName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border text-sm focus:outline-none focus:border-primary"
+                  className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-sm text-white focus:outline-none focus:border-[#2481cc]"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity"
+                className="w-full py-2.5 rounded-xl bg-[#2481cc] hover:bg-[#2074b8] text-white font-bold text-sm shadow-md transition-all"
               >
-                Continue as Google User
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setGoogleEmail('googleuser@gmail.com');
-                  setGoogleName('Google Explorer');
-                }}
-                className="w-full py-2 rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground text-xs transition-colors"
-              >
-                Use sample account: googleuser@gmail.com
+                Continue with Google
               </button>
             </form>
           </div>
