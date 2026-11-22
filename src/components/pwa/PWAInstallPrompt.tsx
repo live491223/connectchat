@@ -13,8 +13,19 @@ export function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isPwaEnabled, setIsPwaEnabled] = useState(true);
 
   useEffect(() => {
+    // Check system setting for PWA prompt
+    fetch('/api/settings/public')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.pwa_enabled === false) {
+          setIsPwaEnabled(false);
+        }
+      })
+      .catch(() => {});
+
     // Check if running in standalone mode (already installed)
     const isRunningStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
@@ -70,7 +81,7 @@ export function PWAInstallPrompt() {
     localStorage.setItem('connectchat_pwa_dismissed', String(Date.now()));
   };
 
-  if (!showPrompt || isStandalone) return null;
+  if (!isPwaEnabled || !showPrompt || isStandalone) return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-50 animate-slide-in-right">
@@ -81,8 +92,8 @@ export function PWAInstallPrompt() {
               <Download className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-foreground">Install ConnectChat</h4>
-              <p className="text-xs text-muted-foreground">Universal Messenger on your device</p>
+              <h4 className="text-sm font-bold text-foreground">Install ConnectChat PWA</h4>
+              <p className="text-xs text-muted-foreground">Universal app for Desktop, Tablet & Mobile</p>
             </div>
           </div>
           <button
@@ -99,32 +110,29 @@ export function PWAInstallPrompt() {
             <p className="font-semibold text-foreground flex items-center gap-1.5">
               <span>Install on iPhone / iPad:</span>
             </p>
-            <p className="flex items-center gap-1.5">
-              1. Tap the <Share className="w-3.5 h-3.5 text-primary inline" /> <strong>Share</strong> button in Safari toolbar.
-            </p>
-            <p className="flex items-center gap-1.5">
-              2. Scroll down and tap <PlusSquare className="w-3.5 h-3.5 text-primary inline" /> <strong>Add to Home Screen</strong>.
-            </p>
+            <ol className="list-decimal pl-4 space-y-1">
+              <li className="flex items-center gap-1.5">
+                Tap the <Share className="w-3.5 h-3.5 text-primary inline" /> Share button in Safari
+              </li>
+              <li className="flex items-center gap-1.5">
+                Scroll down and select <PlusSquare className="w-3.5 h-3.5 text-primary inline" /> &quot;Add to Home Screen&quot;
+              </li>
+            </ol>
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Install as a standalone Progressive Web App for offline access, instant notifications, and fullscreen performance.
-          </p>
-        )}
-
-        {!isIOS && deferredPrompt && (
-          <div className="flex items-center gap-2 pt-1">
-            <button
-              onClick={handleInstallClick}
-              className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-xs hover:opacity-90 transition-opacity shadow-sm"
-            >
-              Install App
-            </button>
+          <div className="flex items-center justify-end gap-2 pt-1">
             <button
               onClick={handleDismiss}
-              className="px-3 py-2 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted"
             >
-              Maybe Later
+              Later
+            </button>
+            <button
+              onClick={handleInstallClick}
+              className="px-4 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:opacity-90 flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Install App
             </button>
           </div>
         )}

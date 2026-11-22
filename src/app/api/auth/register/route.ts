@@ -41,6 +41,11 @@ export async function POST(req: Request) {
 
     const hashedPassword = await hashPassword(password);
 
+    const approvalSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'require_user_approval' },
+    }).catch(() => null);
+    const requireApproval = approvalSetting?.value === 'true';
+
     const user = await prisma.user.create({
       data: {
         name,
@@ -48,10 +53,20 @@ export async function POST(req: Request) {
         email: email.toLowerCase(),
         password: hashedPassword,
         avatar: avatar || null,
+        role: 'USER',
+        isApproved: !requireApproval,
         isOnline: true,
         lastSeen: new Date(),
       },
     });
+
+    if (requireApproval) {
+      return NextResponse.json({
+        success: true,
+        pendingApproval: true,
+        message: 'Account created successfully! It is pending administrator approval before you can sign in.',
+      });
+    }
 
     const token = generateToken({
       userId: user.id,
@@ -65,6 +80,8 @@ export async function POST(req: Request) {
       username: user.username,
       email: user.email,
       avatar: user.avatar,
+      role: user.role,
+      isApproved: user.isApproved,
       statusMessage: user.statusMessage,
       isOnline: true,
       lastSeen: new Date(),

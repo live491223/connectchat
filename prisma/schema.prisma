@@ -15,6 +15,8 @@ model User {
   email            String   @unique
   password         String
   avatar           String?
+  role             String   @default("USER") // ADMIN, USER
+  isApproved       Boolean  @default(true)   // Admin approval status
   statusMessage    String?  @default("Hey there! I am using ConnectChat.")
   isOnline         Boolean  @default(false)
   lastSeen         DateTime @default(now())
@@ -28,6 +30,13 @@ model User {
   sentMessages     Message[]                 @relation("UserMessages")
   reactions        Reaction[]
   receipts         MessageReceipt[]
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 model Conversation {

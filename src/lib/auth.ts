@@ -72,6 +72,8 @@ export async function getAuthUser(customToken?: string) {
         username: true,
         email: true,
         avatar: true,
+        role: true,
+        isApproved: true,
         statusMessage: true,
         isOnline: true,
         lastSeen: true,

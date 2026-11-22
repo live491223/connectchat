@@ -17,6 +17,7 @@ interface ChatContextType {
   isRightPanelOpen: boolean;
   isNewChatOpen: boolean;
   isSettingsOpen: boolean;
+  isAdminOpen: boolean;
   replyingTo: MessageItemType | null;
   editingMessage: MessageItemType | null;
   searchFilter: string;
@@ -32,6 +33,7 @@ interface ChatContextType {
   setIsRightPanelOpen: (open: boolean) => void;
   setIsNewChatOpen: (open: boolean) => void;
   setIsSettingsOpen: (open: boolean) => void;
+  setIsAdminOpen: (open: boolean) => void;
   setReplyingTo: (msg: MessageItemType | null) => void;
   setEditingMessage: (msg: MessageItemType | null) => void;
   setSearchFilter: (query: string) => void;
@@ -75,6 +77,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [isRightPanelOpen, setIsRightPanelOpen] = useState<boolean>(false);
   const [isNewChatOpen, setIsNewChatOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
 
   // Message composer interactions
   const [replyingTo, setReplyingTo] = useState<MessageItemType | null>(null);
@@ -535,6 +538,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         setIsRightPanelOpen,
         setIsNewChatOpen,
         setIsSettingsOpen,
+        isAdminOpen,
+        setIsAdminOpen,
         setReplyingTo,
         setEditingMessage,
         setSearchFilter,

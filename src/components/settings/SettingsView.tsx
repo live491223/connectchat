@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useChat } from '@/context/ChatContext';
 import { useTheme } from '@/context/ThemeContext';
 import { soundEffects } from '@/lib/sound';
 import { Avatar } from '@/components/ui/Avatar';
@@ -31,6 +32,7 @@ const PRESET_AVATARS = [
 export function SettingsView({ onClose }: { onClose?: () => void }) {
   const { user, updateProfile, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { setIsAdminOpen } = useChat();
 
   const [name, setName] = useState(user?.name || '');
   const [statusMessage, setStatusMessage] = useState(user?.statusMessage || '');
@@ -273,6 +275,37 @@ export function SettingsView({ onClose }: { onClose?: () => void }) {
             </label>
           </div>
         </div>
+
+        {/* Admin Management Section (Visible to Admins) */}
+        {user?.role === 'ADMIN' && (
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-amber-500" />
+                <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider">
+                  Admin Management
+                </h4>
+              </div>
+              <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full font-bold">
+                Admin
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Manage user approvals, toggle PWA prompts on Desktop/Tablet/Mobile, and send broadcast notifications.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (onClose) onClose();
+                setIsAdminOpen(true);
+              }}
+              className="w-full py-2 px-3 rounded-xl bg-amber-500 text-black font-bold text-xs hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 shadow-sm"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              Open Admin Management Panel
+            </button>
+          </div>
+        )}
 
         {/* Save Changes Button */}
         <div className="flex items-center gap-3 pt-2">

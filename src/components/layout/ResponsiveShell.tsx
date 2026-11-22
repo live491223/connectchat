@@ -8,12 +8,14 @@ import { NewChatModal } from '@/components/sidebar/NewChatModal';
 import { MediaPreviewModal } from '@/components/chat/MediaPreviewModal';
 import { PWAInstallPrompt } from '@/components/pwa/PWAInstallPrompt';
 import { PWAUpdateBanner } from '@/components/pwa/PWAUpdateBanner';
+import { PWAAnnouncementBanner } from '@/components/pwa/PWAAnnouncementBanner';
 import { Modal } from '@/components/ui/Modal';
 import { SettingsView } from '@/components/settings/SettingsView';
+import { AdminPanelView } from '@/components/admin/AdminPanelView';
 import { useChat } from '@/context/ChatContext';
 
 export function ResponsiveShell() {
-  const { isSettingsOpen, setIsSettingsOpen } = useChat();
+  const { isSettingsOpen, setIsSettingsOpen, isAdminOpen, setIsAdminOpen } = useChat();
   const [viewportWidth, setViewportWidth] = useState<number>(1200);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -40,15 +42,20 @@ export function ResponsiveShell() {
   const isTablet = viewportWidth >= 768 && viewportWidth < 1024;
 
   return (
-    <div className="h-full w-full overflow-hidden bg-background">
+    <div className="h-full w-full overflow-hidden bg-background flex flex-col">
+      {/* System broadcast announcement banner for user notification */}
+      <PWAAnnouncementBanner />
+
       {/* Breakpoint layout */}
-      {isMobile ? (
-        <MobileLayout />
-      ) : isTablet ? (
-        <TabletLayout />
-      ) : (
-        <DesktopLayout />
-      )}
+      <div className="flex-1 overflow-hidden relative">
+        {isMobile ? (
+          <MobileLayout />
+        ) : isTablet ? (
+          <TabletLayout />
+        ) : (
+          <DesktopLayout />
+        )}
+      </div>
 
       {/* Global Shared Modals */}
       <NewChatModal />
@@ -64,6 +71,17 @@ export function ResponsiveShell() {
           maxWidth="lg"
         >
           <SettingsView onClose={() => setIsSettingsOpen(false)} />
+        </Modal>
+      )}
+
+      {/* Admin Management Modal */}
+      {isAdminOpen && (
+        <Modal
+          isOpen={isAdminOpen}
+          onClose={() => setIsAdminOpen(false)}
+          maxWidth="2xl"
+        >
+          <AdminPanelView onClose={() => setIsAdminOpen(false)} />
         </Modal>
       )}
     </div>

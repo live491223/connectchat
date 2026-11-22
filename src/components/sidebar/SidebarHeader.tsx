@@ -5,11 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useChat } from '@/context/ChatContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Avatar } from '@/components/ui/Avatar';
-import { Plus, Settings, Moon, Sun, Monitor, LogOut } from 'lucide-react';
+import { Plus, Settings, Moon, Sun, Monitor, LogOut, Shield } from 'lucide-react';
 
 export function SidebarHeader() {
   const { user, logout } = useAuth();
-  const { setIsNewChatOpen, setIsSettingsOpen } = useChat();
+  const { setIsNewChatOpen, setIsSettingsOpen, setIsAdminOpen } = useChat();
   const { theme, setTheme } = useTheme();
 
   const cycleTheme = () => {
@@ -67,6 +67,18 @@ export function SidebarHeader() {
         >
           <Plus className="w-5 h-5" />
         </button>
+
+        {/* Admin Panel Direct Button */}
+        {user?.role === 'ADMIN' && (
+          <button
+            onClick={() => setIsAdminOpen(true)}
+            className="p-2 rounded-xl text-amber-500 hover:bg-amber-500/10 transition-colors"
+            title="Admin Management Panel"
+            aria-label="Admin Panel"
+          >
+            <Shield className="w-5 h-5" />
+          </button>
+        )}
 
         {/* Settings Button */}
         <button

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'connectchat-cache-v1.0.2';
+const CACHE_NAME = 'connectchat-cache-v2.0.0';
 const OFFLINE_URL = '/offline.html';
 
 const STATIC_ASSETS = [

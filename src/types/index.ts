@@ -4,6 +4,8 @@ export interface UserProfile {
   username: string;
   email: string;
   avatar: string | null;
+  role?: 'ADMIN' | 'USER';
+  isApproved?: boolean;
   statusMessage: string | null;
   isOnline: boolean;
   lastSeen: string | Date;
@@ -11,6 +13,13 @@ export interface UserProfile {
   readReceipts: boolean;
   theme: 'light' | 'dark' | 'system';
   createdAt?: string | Date;
+}
+
+export interface SystemSettings {
+  pwa_enabled: boolean;
+  announcement_enabled: boolean;
+  announcement_text: string;
+  require_user_approval: boolean;
 }
 
 export interface ConversationParticipant {

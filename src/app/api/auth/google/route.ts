@@ -70,6 +70,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Valid Google email or credential is required' }, { status: 400 });
     }
 
+    const approvalSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'require_user_approval' },
+    }).catch(() => null);
+    const requireApproval = approvalSetting?.value === 'true';
+
     // Find or create user
     let user = await prisma.user.findFirst({
       where: { email: userInfo.email },
@@ -95,11 +100,27 @@ export async function POST(req: Request) {
           email: userInfo.email,
           password: randomPassword,
           avatar: userInfo.avatar || null,
+          role: 'USER',
+          isApproved: !requireApproval,
           isOnline: true,
           lastSeen: new Date(),
         },
       });
+
+      if (requireApproval) {
+        return NextResponse.json({
+          error: 'Your account was created but is pending administrator approval before you can sign in.',
+          isPendingApproval: true,
+        }, { status: 403 });
+      }
     } else {
+      if (user.isApproved === false && user.role !== 'ADMIN') {
+        return NextResponse.json({
+          error: 'Your account is pending administrator approval.',
+          isPendingApproval: true,
+        }, { status: 403 });
+      }
+
       // Update online status and avatar if not set
       user = await prisma.user.update({
         where: { id: user.id },
@@ -123,6 +144,8 @@ export async function POST(req: Request) {
       username: user.username,
       email: user.email,
       avatar: user.avatar,
+      role: user.role || 'USER',
+      isApproved: user.isApproved ?? true,
       statusMessage: user.statusMessage,
       isOnline: true,
       lastSeen: new Date(),
