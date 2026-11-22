@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useChat } from '@/context/ChatContext';
 import { useAuth } from '@/context/AuthContext';
+import { useCall } from '@/context/CallContext';
 import { Avatar } from '@/components/ui/Avatar';
 import { formatLastSeen } from '@/lib/utils';
 import {
@@ -18,6 +19,7 @@ import { Modal } from '@/components/ui/Modal';
 
 export function ChatHeader() {
   const { user } = useAuth();
+  const { startCall } = useCall();
   const {
     activeConversation,
     setActiveConversationId,
@@ -28,7 +30,6 @@ export function ChatHeader() {
   } = useChat();
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [callModal, setCallModal] = useState<{ type: 'voice' | 'video'; name: string } | null>(null);
 
   if (!activeConversation) return null;
 
@@ -46,8 +47,19 @@ export function ChatHeader() {
     ? `${activeConversation.participants.length} members`
     : formatLastSeen(isOnline, otherParticipant?.lastSeen, showStatus);
 
-  const handleStartCall = (type: 'voice' | 'video') => {
-    setCallModal({ type, name: title });
+  const handleStartCall = async (type: 'voice' | 'video') => {
+    if (!activeConversation) return;
+
+    const otherParticipant = activeConversation.participants?.find((p) => p.userId !== user?.id)?.user;
+    const recipientId = otherParticipant?.id || activeConversation.id;
+
+    await startCall({
+      recipientId,
+      recipientName: title,
+      recipientAvatar: avatar,
+      conversationId: activeConversation.id,
+      type,
+    });
   };
 
   return (
@@ -167,33 +179,6 @@ export function ChatHeader() {
             Done
           </button>
         </div>
-      )}
-
-      {/* Simulated Call Modal */}
-      {callModal && (
-        <Modal
-          isOpen={true}
-          onClose={() => setCallModal(null)}
-          title={callModal.type === 'video' ? 'Video Call' : 'Voice Call'}
-          maxWidth="sm"
-        >
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <Avatar name={callModal.name} size="2xl" className="mb-4" />
-            <h3 className="text-lg font-bold">{callModal.name}</h3>
-            <p className="text-sm text-muted-foreground mt-1 animate-pulse">
-              Connecting secure WebRTC call...
-            </p>
-
-            <div className="flex items-center gap-4 mt-8">
-              <button
-                onClick={() => setCallModal(null)}
-                className="px-6 py-2.5 rounded-full bg-destructive text-destructive-foreground font-semibold text-sm hover:opacity-90"
-              >
-                End Call
-              </button>
-            </div>
-          </div>
-        </Modal>
       )}
     </>
   );

@@ -12,6 +12,8 @@ import { PWAAnnouncementBanner } from '@/components/pwa/PWAAnnouncementBanner';
 import { Modal } from '@/components/ui/Modal';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { AdminPanelView } from '@/components/admin/AdminPanelView';
+import { WebRTCCallModal } from '@/components/call/WebRTCCallModal';
+import { IncomingCallAlert } from '@/components/call/IncomingCallAlert';
 import { useChat } from '@/context/ChatContext';
 
 export function ResponsiveShell() {
@@ -62,6 +64,8 @@ export function ResponsiveShell() {
       <MediaPreviewModal />
       <PWAInstallPrompt />
       <PWAUpdateBanner />
+      <IncomingCallAlert />
+      <WebRTCCallModal />
 
       {/* Settings Modal (for Desktop and Tablet) */}
       {!isMobile && isSettingsOpen && (

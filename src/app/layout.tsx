@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { ChatProvider } from '@/context/ChatContext';
+import { CallProvider } from '@/context/CallContext';
 
 export const metadata: Metadata = {
   title: 'ConnectChat - Universal Messenger',
@@ -49,7 +50,9 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <ChatProvider>
-              {children}
+              <CallProvider>
+                {children}
+              </CallProvider>
             </ChatProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -99,6 +99,39 @@ class SoundEffects {
       // Audio autoplay restrictions
     }
   }
+
+  private ringtoneInterval: ReturnType<typeof setInterval> | null = null;
+
+  public startRingtone() {
+    if (!this.soundEnabled || this.ringtoneInterval) return;
+    const playRing = () => {
+      try {
+        const ctx = this.getContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.setValueAtTime(600, now + 0.2);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      } catch (e) {}
+    };
+    playRing();
+    this.ringtoneInterval = setInterval(playRing, 2500);
+  }
+
+  public stopRingtone() {
+    if (this.ringtoneInterval) {
+      clearInterval(this.ringtoneInterval);
+      this.ringtoneInterval = null;
+    }
+  }
 }
 
 export const soundEffects = new SoundEffects();
