@@ -21,6 +21,12 @@ import {
   Globe,
   Key,
   ExternalLink,
+  UserPlus,
+  Edit,
+  Lock,
+  Eye,
+  EyeOff,
+  Save,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { cn } from '@/lib/utils';
@@ -52,7 +58,7 @@ interface AdminPanelViewProps {
 }
 
 export function AdminPanelView({ onClose }: AdminPanelViewProps) {
-  const [activeTab, setActiveTab] = useState<'users' | 'settings' | 'google'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'security' | 'google' | 'settings'>('users');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [settings, setSettings] = useState<AdminSettings>({
     pwa_enabled: true,
@@ -62,14 +68,44 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
     google_client_id: '',
     google_client_secret: '',
   });
+
   const [loading, setLoading] = useState<boolean>(true);
   const [savingSettings, setSavingSettings] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // 1. Change Admin Password state
+  const [currentAdminPassword, setCurrentAdminPassword] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [confirmAdminPassword, setConfirmAdminPassword] = useState('');
+  const [showAdminPass, setShowAdminPass] = useState(false);
+  const [changingPass, setChangingPass] = useState(false);
+
+  // 2. Add New User Modal state
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [addName, setAddName] = useState('');
+  const [addUsername, setAddUsername] = useState('');
+  const [addEmail, setAddEmail] = useState('');
+  const [addPassword, setAddPassword] = useState('');
+  const [addRole, setAddRole] = useState<'USER' | 'ADMIN'>('USER');
+  const [addApproved, setAddApproved] = useState(true);
+  const [submittingAdd, setSubmittingAdd] = useState(false);
+
+  // 3. Edit User Modal state
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [editRole, setEditRole] = useState<'USER' | 'ADMIN'>('USER');
+  const [editApproved, setEditApproved] = useState(true);
+  const [submittingEdit, setSubmittingEdit] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
     setStatusMessage(null);
+    setErrorMessage(null);
     try {
       const [usersRes, settingsRes] = await Promise.all([
         fetch('/api/admin/users'),
@@ -88,7 +124,7 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
         }
       }
     } catch (err) {
-      setStatusMessage('Failed to load admin data');
+      setErrorMessage('Failed to load admin data');
     } finally {
       setLoading(false);
     }
@@ -98,6 +134,7 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
     loadData();
   }, []);
 
+  // Quick Approval toggle
   const handleToggleApproval = async (userId: string, currentApproved: boolean) => {
     try {
       const res = await fetch('/api/admin/users', {
@@ -115,30 +152,11 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
         setTimeout(() => setStatusMessage(null), 3500);
       }
     } catch (e) {
-      setStatusMessage('Error updating user approval');
+      setErrorMessage('Error updating user approval');
     }
   };
 
-  const handleToggleRole = async (userId: string, currentRole: 'ADMIN' | 'USER') => {
-    const newRole = currentRole === 'ADMIN' ? 'USER' : 'ADMIN';
-    try {
-      const res = await fetch('/api/admin/users', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, role: newRole }),
-      });
-      if (res.ok) {
-        setUsers((prev) =>
-          prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-        );
-        setStatusMessage(`Role updated to ${newRole}`);
-        setTimeout(() => setStatusMessage(null), 3000);
-      }
-    } catch (e) {
-      setStatusMessage('Error updating role');
-    }
-  };
-
+  // Delete User
   const handleDeleteUser = async (userId: string, username: string) => {
     if (!confirm(`Are you sure you want to permanently delete user @${username}?`)) return;
     try {
@@ -147,17 +165,149 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
       });
       if (res.ok) {
         setUsers((prev) => prev.filter((u) => u.id !== userId));
-        setStatusMessage(`User @${username} deleted`);
+        setStatusMessage(`User @${username} deleted from database`);
         setTimeout(() => setStatusMessage(null), 3000);
+      } else {
+        const err = await res.json();
+        setErrorMessage(err.error || 'Failed to delete user');
       }
     } catch (e) {
-      setStatusMessage('Error deleting user');
+      setErrorMessage('Error deleting user');
     }
   };
 
+  // Add New User Handler
+  const handleAddUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingAdd(true);
+    setErrorMessage(null);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: addName.trim(),
+          username: addUsername.trim(),
+          email: addEmail.trim(),
+          password: addPassword,
+          role: addRole,
+          isApproved: addApproved,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMessage(data.error || 'Failed to create user');
+      } else {
+        setUsers((prev) => [data.user, ...prev]);
+        setShowAddUserModal(false);
+        setAddName('');
+        setAddUsername('');
+        setAddEmail('');
+        setAddPassword('');
+        setStatusMessage(`User @${data.user.username} created successfully!`);
+        setTimeout(() => setStatusMessage(null), 3500);
+      }
+    } catch (e) {
+      setErrorMessage('Error adding user');
+    } finally {
+      setSubmittingAdd(false);
+    }
+  };
+
+  // Open Edit User Modal
+  const openEditUser = (u: AdminUser) => {
+    setEditingUser(u);
+    setEditName(u.name);
+    setEditUsername(u.username);
+    setEditEmail(u.email);
+    setEditPassword('');
+    setEditRole(u.role);
+    setEditApproved(u.isApproved);
+  };
+
+  // Save Edit User
+  const handleEditUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSubmittingEdit(true);
+    setErrorMessage(null);
+    try {
+      const payload: Record<string, any> = {
+        userId: editingUser.id,
+        name: editName.trim(),
+        username: editUsername.trim(),
+        email: editEmail.trim(),
+        role: editRole,
+        isApproved: editApproved,
+      };
+      if (editPassword.trim()) {
+        payload.password = editPassword.trim();
+      }
+
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMessage(data.error || 'Failed to update user record');
+      } else {
+        setUsers((prev) => prev.map((u) => (u.id === editingUser.id ? data.user : u)));
+        setEditingUser(null);
+        setStatusMessage(`User @${data.user.username} updated in database!`);
+        setTimeout(() => setStatusMessage(null), 3500);
+      }
+    } catch (e) {
+      setErrorMessage('Error updating user');
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  // Change Admin Password Handler
+  const handleChangeAdminPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    if (newAdminPassword !== confirmAdminPassword) {
+      setErrorMessage('New password and confirmation do not match');
+      return;
+    }
+
+    setChangingPass(true);
+    try {
+      const res = await fetch('/api/admin/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: currentAdminPassword,
+          newPassword: newAdminPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMessage(data.error || 'Failed to change admin password');
+      } else {
+        setStatusMessage('Admin password updated successfully! Keep your new password safe.');
+        setCurrentAdminPassword('');
+        setNewAdminPassword('');
+        setConfirmAdminPassword('');
+        setTimeout(() => setStatusMessage(null), 4000);
+      }
+    } catch (e) {
+      setErrorMessage('Error changing password');
+    } finally {
+      setChangingPass(false);
+    }
+  };
+
+  // Save System Settings
   const handleSaveSettings = async () => {
     setSavingSettings(true);
     setStatusMessage(null);
+    setErrorMessage(null);
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
@@ -167,9 +317,11 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
       if (res.ok) {
         setStatusMessage('Settings updated successfully! Changes saved across all devices.');
         setTimeout(() => setStatusMessage(null), 3500);
+      } else {
+        setErrorMessage('Failed to save settings');
       }
     } catch (e) {
-      setStatusMessage('Error saving settings');
+      setErrorMessage('Error saving settings');
     } finally {
       setSavingSettings(false);
     }
@@ -188,16 +340,16 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
 
   return (
     <div className="flex flex-col h-full max-h-[85vh] bg-[#17212b] text-[#f5f5f5] rounded-2xl overflow-hidden border border-[#242f3d]">
-      {/* Header */}
+      {/* Top Header */}
       <div className="px-6 py-4 border-b border-[#242f3d] flex items-center justify-between bg-[#0e1621]/60">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#2481cc] flex items-center justify-center text-white shadow-md shadow-[#2481cc]/20">
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold">Admin Management Panel</h2>
+            <h2 className="text-lg font-bold">Admin Management & Database Panel</h2>
             <p className="text-xs text-[#708499]">
-              User Approvals, Google API Connect & System Toggles
+              User CRUD, Admin Password, Google OAuth API & System Controls
             </p>
           </div>
         </div>
@@ -232,12 +384,25 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
           )}
         >
           <Users className="w-4 h-4" />
-          <span>User Approvals & Control</span>
+          <span>User Database (CRUD)</span>
           {pendingCount > 0 && (
             <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/20 text-amber-400 font-bold">
               {pendingCount} Pending
             </span>
           )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('security')}
+          className={cn(
+            'pb-3 border-b-2 flex items-center gap-2 transition-all whitespace-nowrap',
+            activeTab === 'security'
+              ? 'border-[#2481cc] text-[#2481cc] font-bold'
+              : 'border-transparent text-[#708499] hover:text-white'
+          )}
+        >
+          <Lock className="w-4 h-4" />
+          <span>Admin Password</span>
         </button>
 
         <button
@@ -270,7 +435,7 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
         </button>
       </div>
 
-      {/* Status Alert Banner */}
+      {/* Status & Error Alerts */}
       {statusMessage && (
         <div className="mx-6 mt-3 p-2.5 rounded-xl bg-[#2481cc]/15 border border-[#2481cc]/40 text-[#2481cc] text-xs font-medium flex items-center justify-between animate-fade-in">
           <span>{statusMessage}</span>
@@ -280,11 +445,43 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
         </div>
       )}
 
+      {errorMessage && (
+        <div className="mx-6 mt-3 p-2.5 rounded-xl bg-destructive/15 border border-destructive/40 text-rose-400 text-xs font-medium flex items-center justify-between animate-fade-in">
+          <span>{errorMessage}</span>
+          <button onClick={() => setErrorMessage(null)}>
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* Tab 1: Users & User Approval */}
+        {/* Tab 1: User Database CRUD */}
         {activeTab === 'users' && (
           <div className="space-y-4">
+            {/* Top Toolbar: Search + Add User Button */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-[#708499]" />
+                <input
+                  type="text"
+                  placeholder="Search database by name, @username, or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white placeholder-[#708499] focus:outline-none focus:border-[#2481cc]"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAddUserModal(true)}
+                className="py-2 px-4 rounded-xl bg-[#2481cc] hover:bg-[#2074b8] text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 shrink-0"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>+ Add User to Database</span>
+              </button>
+            </div>
+
             {/* Quick Stats Bar */}
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3.5 rounded-2xl bg-[#202b36] border border-[#242f3d]">
@@ -303,43 +500,11 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
               </div>
             </div>
 
-            {/* Approval Info Alert */}
-            <div className="p-3 rounded-xl bg-[#0e1621] border border-[#242f3d] flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-[#2481cc]" />
-                <span className="text-[#a2b5c7]">
-                  Strict Approval is <strong>{settings.require_user_approval ? 'ACTIVE' : 'OFF'}</strong>. Only approved users can chat or call.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSettings(prev => ({ ...prev, require_user_approval: !prev.require_user_approval }));
-                  handleSaveSettings();
-                }}
-                className="text-[#2481cc] hover:underline font-bold"
-              >
-                {settings.require_user_approval ? 'Toggle OFF' : 'Toggle ON'}
-              </button>
-            </div>
-
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-[#708499]" />
-              <input
-                type="text"
-                placeholder="Search user by name, @username, or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white placeholder-[#708499] focus:outline-none focus:border-[#2481cc]"
-              />
-            </div>
-
-            {/* Users List */}
+            {/* Users Table / Records List */}
             <div className="border border-[#242f3d] rounded-2xl overflow-hidden divide-y divide-[#242f3d] bg-[#17212b]">
               {filteredUsers.length === 0 ? (
                 <div className="p-8 text-center text-xs text-[#708499]">
-                  No accounts found. New registrations will appear here.
+                  No accounts found. Click &quot;+ Add User to Database&quot; to create one.
                 </div>
               ) : (
                 filteredUsers.map((u) => (
@@ -373,7 +538,7 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
                       </div>
                     </div>
 
-                    {/* Action buttons */}
+                    {/* Action buttons: Edit, Approve/Revoke, Delete */}
                     <div className="flex items-center gap-2 shrink-0">
                       {/* Approve / Revoke Button */}
                       <button
@@ -394,30 +559,25 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
                         ) : (
                           <>
                             <UserCheck className="w-3.5 h-3.5" />
-                            <span>Approve Access</span>
+                            <span>Approve</span>
                           </>
                         )}
                       </button>
 
-                      {/* Make Admin Toggle */}
+                      {/* Edit Database Record (Pencil) */}
                       <button
-                        onClick={() => handleToggleRole(u.id, u.role)}
-                        title={u.role === 'ADMIN' ? 'Remove Admin' : 'Make Admin'}
-                        className={cn(
-                          'p-2 rounded-xl border border-[#242f3d] transition-colors',
-                          u.role === 'ADMIN'
-                            ? 'text-amber-400 bg-amber-400/10'
-                            : 'text-[#708499] hover:text-white hover:bg-[#202b36]'
-                        )}
+                        onClick={() => openEditUser(u)}
+                        title="Edit User Database Record"
+                        className="p-2 rounded-xl border border-[#242f3d] bg-[#202b36] text-[#708499] hover:text-[#2481cc] hover:bg-[#202b36] transition-colors"
                       >
-                        <Shield className="w-3.5 h-3.5" />
+                        <Edit className="w-3.5 h-3.5" />
                       </button>
 
                       {/* Delete User */}
                       {u.role !== 'ADMIN' && (
                         <button
                           onClick={() => handleDeleteUser(u.id, u.username)}
-                          title="Delete User"
+                          title="Delete User from Database"
                           className="p-2 rounded-xl text-[#708499] hover:text-rose-400 hover:bg-rose-500/10 border border-[#242f3d] transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -431,7 +591,92 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
           </div>
         )}
 
-        {/* Tab 2: Google API Connect */}
+        {/* Tab 2: Admin Password Change */}
+        {activeTab === 'security' && (
+          <div className="max-w-md mx-auto space-y-5">
+            <div className="p-5 rounded-2xl bg-[#202b36] border border-[#242f3d] space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">Change Administrator Password</h4>
+                  <p className="text-xs text-[#708499]">
+                    Update the root password for the Admin account.
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleChangeAdminPassword} className="space-y-3.5 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-[#708499] uppercase mb-1">
+                    Current Password
+                  </label>
+                  <input
+                    type={showAdminPass ? 'text' : 'password'}
+                    required
+                    placeholder="Enter current password (e.g. password123)"
+                    value={currentAdminPassword}
+                    onChange={(e) => setCurrentAdminPassword(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0e1621] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#708499] uppercase mb-1">
+                    New Password
+                  </label>
+                  <input
+                    type={showAdminPass ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    placeholder="At least 6 characters"
+                    value={newAdminPassword}
+                    onChange={(e) => setNewAdminPassword(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0e1621] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#708499] uppercase mb-1">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type={showAdminPass ? 'text' : 'password'}
+                    required
+                    minLength={6}
+                    placeholder="Confirm new password"
+                    value={confirmAdminPassword}
+                    onChange={(e) => setConfirmAdminPassword(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#0e1621] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-[#708499]">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPass(!showAdminPass)}
+                    className="flex items-center gap-1.5 hover:text-white"
+                  >
+                    {showAdminPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    <span>{showAdminPass ? 'Hide Passwords' : 'Show Passwords'}</span>
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={changingPass}
+                  className="w-full py-2.5 rounded-xl bg-[#2481cc] hover:bg-[#2074b8] text-white font-bold text-xs shadow-md disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                >
+                  {changingPass && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  Update Admin Password
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Google API Connect */}
         {activeTab === 'google' && (
           <div className="space-y-5">
             <div className="p-4 rounded-2xl bg-[#202b36] border border-[#242f3d] space-y-4">
@@ -524,7 +769,7 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
           </div>
         )}
 
-        {/* Tab 3: PWA & System Settings */}
+        {/* Tab 4: PWA & System Settings */}
         {activeTab === 'settings' && (
           <div className="space-y-6">
             {/* 1. PWA Controls */}
@@ -636,6 +881,245 @@ export function AdminPanelView({ onClose }: AdminPanelViewProps) {
           </div>
         )}
       </div>
+
+      {/* --- MODAL 1: ADD USER DIRECTLY TO DATABASE --- */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-md bg-[#17212b] border border-[#242f3d] rounded-3xl p-6 shadow-2xl relative text-white">
+            <button
+              type="button"
+              onClick={() => setShowAddUserModal(false)}
+              className="absolute top-4 right-4 text-[#708499] hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#2481cc] flex items-center justify-center text-white">
+                <UserPlus className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold">Add User to Database</h3>
+                <p className="text-xs text-[#708499]">Admin Direct Account Insertion</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAddUserSubmit} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Amit Kumar"
+                  value={addName}
+                  onChange={(e) => setAddName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">Username</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="amitkumar"
+                    value={addUsername}
+                    onChange={(e) => setAddUsername(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">Role</label>
+                  <select
+                    value={addRole}
+                    onChange={(e) => setAddRole(e.target.value as 'USER' | 'ADMIN')}
+                    className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                  >
+                    <option value="USER">USER</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="amit@example.com"
+                  value={addEmail}
+                  onChange={(e) => setAddEmail(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">Initial Password</label>
+                <input
+                  type="text"
+                  required
+                  minLength={6}
+                  placeholder="Password (min 6 chars)"
+                  value={addPassword}
+                  onChange={(e) => setAddPassword(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="addApprovedCheck"
+                  checked={addApproved}
+                  onChange={(e) => setAddApproved(e.target.checked)}
+                  className="w-4 h-4 accent-[#2481cc] rounded cursor-pointer"
+                />
+                <label htmlFor="addApprovedCheck" className="text-xs text-[#a2b5c7] cursor-pointer">
+                  Approve immediately (User can chat and call right away)
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddUserModal(false)}
+                  className="px-4 py-2 rounded-xl bg-[#202b36] text-xs text-[#708499] hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingAdd}
+                  className="px-5 py-2 rounded-xl bg-[#2481cc] hover:bg-[#2074b8] text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
+                >
+                  {submittingAdd && <RefreshCw className="w-3 h-3 animate-spin" />}
+                  <span>Insert User</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 2: EDIT USER DATABASE RECORD --- */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="w-full max-w-md bg-[#17212b] border border-[#242f3d] rounded-3xl p-6 shadow-2xl relative text-white">
+            <button
+              type="button"
+              onClick={() => setEditingUser(null)}
+              className="absolute top-4 right-4 text-[#708499] hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#202b36] flex items-center justify-center text-[#2481cc]">
+                <Edit className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold">Edit Database Record</h3>
+                <p className="text-xs text-[#708499]">User ID: {editingUser.id.substring(0, 12)}...</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleEditUserSubmit} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">Username</label>
+                  <input
+                    type="text"
+                    required
+                    value={editUsername}
+                    onChange={(e) => setEditUsername(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">Role</label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value as 'USER' | 'ADMIN')}
+                    className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                  >
+                    <option value="USER">USER</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#708499] uppercase mb-1">
+                  Reset Password (Leave blank to keep unchanged)
+                </label>
+                <input
+                  type="text"
+                  minLength={6}
+                  placeholder="Enter new password to overwrite"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-[#202b36] border border-[#242f3d] text-xs text-white focus:outline-none focus:border-[#2481cc]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="editApprovedCheck"
+                  checked={editApproved}
+                  onChange={(e) => setEditApproved(e.target.checked)}
+                  className="w-4 h-4 accent-[#2481cc] rounded cursor-pointer"
+                />
+                <label htmlFor="editApprovedCheck" className="text-xs text-[#a2b5c7] cursor-pointer">
+                  Approval Status: {editApproved ? 'Approved (Active)' : 'Pending (Restricted)'}
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="px-4 py-2 rounded-xl bg-[#202b36] text-xs text-[#708499] hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingEdit}
+                  className="px-5 py-2 rounded-xl bg-[#2481cc] hover:bg-[#2074b8] text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
+                >
+                  {submittingEdit && <RefreshCw className="w-3 h-3 animate-spin" />}
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
