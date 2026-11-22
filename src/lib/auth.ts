@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import prisma from './prisma';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'connectchat-universal-secret-key-2026';
@@ -32,10 +32,32 @@ export function verifyToken(token: string): TokenPayload | null {
   }
 }
 
-export async function getAuthUser() {
+export async function getAuthUser(customToken?: string) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get(TOKEN_NAME)?.value;
+    let token = customToken;
+
+    // 1. Try reading cookie
+    if (!token) {
+      try {
+        const cookieStore = cookies();
+        token = cookieStore.get(TOKEN_NAME)?.value;
+      } catch (e) {
+        // cookies() might not be available in some contexts
+      }
+    }
+
+    // 2. Try reading Authorization header (Bearer <token>)
+    if (!token) {
+      try {
+        const headersList = headers();
+        const authHeader = headersList.get('authorization');
+        if (authHeader?.startsWith('Bearer ')) {
+          token = authHeader.substring(7).trim();
+        }
+      } catch (e) {
+        // headers() might not be available in some contexts
+      }
+    }
 
     if (!token) return null;
 

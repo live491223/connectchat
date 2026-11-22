@@ -8,6 +8,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (data: { name: string; username: string; email: string; password: string; avatar?: string }) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: (payload: { credential?: string; email?: string; name?: string; avatar?: string }) => Promise<{ success: boolean; error?: string }>;
   switchDemoUser: (username: string) => Promise<{ success: boolean; error?: string }>;
   updateProfile: (data: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
@@ -22,10 +23,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchCurrentUser = useCallback(async () => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('connectchat_token') : null;
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch('/api/auth/me', {
+        headers,
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -39,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUser(null);
         localStorage.removeItem('connectchat_userId');
+        localStorage.removeItem('connectchat_token');
       }
     } catch (e) {
       setUser(null);
@@ -65,6 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.user);
       localStorage.setItem('connectchat_userId', data.user.id);
+      if (data.token) {
+        localStorage.setItem('connectchat_token', data.token);
+      }
       return { success: true };
     } catch (err: unknown) {
       return { success: false, error: 'Network error during login' };
@@ -84,9 +96,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.user);
       localStorage.setItem('connectchat_userId', data.user.id);
+      if (data.token) {
+        localStorage.setItem('connectchat_token', data.token);
+      }
       return { success: true };
     } catch (err: unknown) {
       return { success: false, error: 'Network error during registration' };
+    }
+  };
+
+  const loginWithGoogle = async (payload: { credential?: string; email?: string; name?: string; avatar?: string }) => {
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, error: data.error || 'Google sign-in failed' };
+      }
+      setUser(data.user);
+      localStorage.setItem('connectchat_userId', data.user.id);
+      if (data.token) {
+        localStorage.setItem('connectchat_token', data.token);
+      }
+      return { success: true };
+    } catch (err: unknown) {
+      return { success: false, error: 'Network error during Google sign-in' };
     }
   };
 
@@ -105,6 +142,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(data.user);
       localStorage.setItem('connectchat_userId', data.user.id);
+      if (data.token) {
+        localStorage.setItem('connectchat_token', data.token);
+      }
       setIsLoading(false);
       return { success: true };
     } catch (err: unknown) {
@@ -115,9 +155,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = async (data: Partial<UserProfile>) => {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('connectchat_token') : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch('/api/users/profile', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(data),
       });
       const resData = await res.json();
@@ -137,6 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setUser(null);
       localStorage.removeItem('connectchat_userId');
+      localStorage.removeItem('connectchat_token');
     }
   };
 
@@ -147,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         login,
         register,
+        loginWithGoogle,
         switchDemoUser,
         updateProfile,
         logout,
