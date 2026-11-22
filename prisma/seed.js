@@ -16,6 +16,23 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash('password123', 10);
 
+  // 0. Create System Administrator
+  const admin = await prisma.user.create({
+    data: {
+      name: 'System Administrator',
+      username: 'admin',
+      email: 'admin@connectchat.io',
+      password: hashedPassword,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      statusMessage: '👑 System Administrator - Full Access',
+      isOnline: true,
+      lastSeen: new Date(),
+      showOnlineStatus: true,
+      readReceipts: true,
+      theme: 'dark',
+    },
+  });
+
   // Create Users with stylish SVGs / avatars
   const sarah = await prisma.user.create({
     data: {
@@ -81,7 +98,7 @@ async function main() {
     },
   });
 
-  console.log('✅ Users created:', [sarah.name, alex.name, elena.name, david.name]);
+  console.log('✅ Users created:', [admin.name, sarah.name, alex.name, elena.name, david.name]);
 
   // 1. One-to-one conversation: Sarah & Alex
   const convSarahAlex = await prisma.conversation.create({
@@ -172,6 +189,7 @@ async function main() {
       adminId: sarah.id,
       participants: {
         create: [
+          { userId: admin.id, role: 'ADMIN' },
           { userId: sarah.id, role: 'ADMIN' },
           { userId: alex.id, role: 'MEMBER' },
           { userId: elena.id, role: 'MEMBER' },

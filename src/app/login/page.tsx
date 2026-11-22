@@ -18,6 +18,13 @@ import { cn } from '@/lib/utils';
 
 const DEMO_PERSONAS = [
   {
+    name: 'System Administrator (Admin)',
+    username: 'admin',
+    role: '👑 Full Admin Access',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    color: 'from-amber-500 to-rose-600',
+  },
+  {
     name: 'Sarah Connor',
     username: 'sarah',
     role: 'Tech Lead & AI Architect',

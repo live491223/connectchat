@@ -17,8 +17,9 @@ out/
 # Database
 prisma/dev.db
 prisma/dev.db-journal
-*.db
 *.sqlite
+*.db
+!prisma/connectchat.db
 
 # User uploaded media
 public/uploads/*
